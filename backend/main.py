@@ -6,10 +6,9 @@ from psycopg.rows import dict_row
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://tracker:devpass@localhost:5432/issues",
-)
+
+DATABASE_URL = os.environ["DATABASE_URL"]
+
 
 app = FastAPI(title="Issue Tracker API")
 
