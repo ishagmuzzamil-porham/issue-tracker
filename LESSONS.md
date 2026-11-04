@@ -17,6 +17,15 @@
 - A password inside the code ends up on GitHub. The database password is currently a default value in `main.py`, and I will move it to a `.env` file that Git ignores when I add Docker Compose.
 - `git push` needs a Personal Access Token, not the account password.
 - Copy only the commands, one at a time, and understand what each one does before running it.
+## 4. Docker Compose
+- Inside a container, `localhost` means the container itself. Containers on the same Compose network reach each other by service name (`db`), because Compose runs a name directory (service discovery).
+- Compose describes the desired state in a file. `docker compose up` compares it with what is running and changes only the difference.
+- `name: pgdata` makes Compose reuse my existing volume. Without it, Compose creates `issue-tracker_pgdata`, a new empty volume, and the data seems lost.
+- `docker compose down` removes containers and the network. `docker compose down -v` also deletes the volumes and my data. Never use `-v` by accident.
+- `depends_on` controls start order only, not readiness. A health check is needed for that (to do).
+- Secrets: I removed the password default from `main.py`, but Git history still contains `devpass`. With a real password I would have to change it. `.env` is ignored, `.env.example` documents the variables.
+- Fail fast: a missing required setting should stop the app at start-up with a clear error (`KeyError: 'DATABASE_URL'`).
+- A system is trustworthy when I can destroy it and rebuild it from the files, with the data intact.
 
 ## Startup checklist
 1. `docker start db`
