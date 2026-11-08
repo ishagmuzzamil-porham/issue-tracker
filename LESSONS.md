@@ -34,6 +34,21 @@
 - `depends_on` with `condition: service_healthy` makes `api` wait until `db` accepts connections.
 - Our `/health` endpoint says "alive", it does not check the database. A deeper readiness check can come later.
 
+## 6. GitHub Actions and tokens
+- CI runs on a fresh temporary machine, so hidden dependencies on my laptop become failures.
+- The pipeline is code in `.github/workflows/`.
+- My first push of a workflow was rejected: a Personal Access Token needs the `workflow` scope to change workflow files. Principle of least privilege: give a token only the permissions it needs. Workflow files run code with access to secrets, so they need an extra permission.
+- Never paste a token in a chat, code or commit. Give tokens an expiry date.
+
+## 7. Tests
+- A green build is not a correct system. Tests check behavior: arrange, act, assert.
+- Tests are executable promises. If someone breaks one, the robot tells them within minutes.
+- Put fast cheap checks first (`needs:` in the workflow) and heavy ones later.
+- Keep test tools out of the production image: `requirements.txt` (runtime) and `requirements-dev.txt` (runtime plus tests).
+- `main.py` fails fast without DATABASE_URL, so the tests set a fake value before importing it.
+- `>>` appends to a file, `>` overwrites it. Don't overwrite `.gitignore` by mistake.
+- Quote versions in YAML: `"3.14"`, because unquoted `3.10` would be read as the number 3.1.
+
 ## Startup checklist
 1. `docker start db`
 2. `cd ~/issue-tracker/backend`
