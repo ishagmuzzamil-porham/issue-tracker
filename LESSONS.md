@@ -49,6 +49,15 @@
 - `>>` appends to a file, `>` overwrites it. Don't overwrite `.gitignore` by mistake.
 - Quote versions in YAML: `"3.14"`, because unquoted `3.10` would be read as the number 3.1.
 
+## 8. Full system in CI
+- The stranger test: a fresh machine must reach a working system from the repo alone. CI is the perfect stranger.
+- Postgres runs the .sql files in /docker-entrypoint-initdb.d/ once, on an empty data folder, so the schema can load itself (bootstrapping). It does not update an existing database; that needs migrations.
+- Bind mount = a path of mine shared into the container. Named volume = Docker-managed storage for data. `:ro` means read-only.
+- `docker compose up --wait` uses the health checks, so CI waits for "healthy" instead of guessing with sleep.
+- `curl --fail-with-body` makes curl fail on HTTP errors. `exec -T` is needed where there is no terminal. `if: failure()` prints logs only when something broke.
+- A CI runner is ephemeral: it is destroyed afterwards, so cleanup doesn't matter there. On my laptop I never use `down -v` carelessly.
+- A relative path in `docker run -v` is read as a volume name; a bind mount needs the full path ($PWD).
+
 ## Startup checklist
 1. `docker start db`
 2. `cd ~/issue-tracker/backend`
