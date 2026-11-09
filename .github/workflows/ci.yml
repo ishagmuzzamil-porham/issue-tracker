@@ -23,12 +23,36 @@ jobs:
       - name: Run tests
         run: pytest backend -v
 
-  build:
+  integration:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
         uses: actions/checkout@v6
 
-      - name: Build the API image
-        run: docker build -t issue-tracker-api ./backend
+      - name: Create .env from the template
+        run: cp .env.example .env
+
+      - name: Start the whole system
+        run: docker compose up -d --build --wait --wait-timeout 120
+
+      - name: API health answers
+        run: curl --fail-with-body http://localhost:8000/health
+
+      - name: Add a customer and a project
+        run: |
+          docker compose exec -T db psql -U tracker -d issues -c "INSERT INTO customers (name) VALUES ('CI Customer');"
+          docker compose exec -T db psql -U tracker -d issues -c "INSERT INTO projects (name, customer_id) VALUES ('CI Project', 1);"
+
+      - name: Create an issue through the API
+        run: |
+          curl --fail-with-body -X POST http://localhost:8000/issues \
+            -H "Content-Type: application/json" \
+            -d '{"title":"CI smoke test","description":"created by the pipeline","project_id":1,"reported_by":"CI"}'
+
+      - name: Read it back
+        run: curl --fail-with-body http://localhost:8000/issues | grep "CI smoke test"
+
+      - name: Show logs if something failed
+        if: failure()
+        run: docker compose logs
