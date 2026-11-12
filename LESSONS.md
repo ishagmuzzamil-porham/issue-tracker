@@ -58,8 +58,17 @@
 - A CI runner is ephemeral: it is destroyed afterwards, so cleanup doesn't matter there. On my laptop I never use `down -v` carelessly.
 - A relative path in `docker run -v` is read as a volume name; a bind mount needs the full path ($PWD).
 
+## 9. Image hygiene
+- Each `FROM` starts a new build stage and only the last one becomes the image. My Dockerfile had `FROM` three times by accident: it still worked, but it was wasted work and confusing.
+- The build context is everything `docker build` sends to Docker. Without a `.dockerignore`, my 95 MB `.venv` was sent every time, even though only `main.py` was copied. Now the context is a few bytes.
+- `.dockerignore` also keeps secrets and junk (`.env`, caches) from ever getting into an image by accident.
+- Containers run as root unless I say otherwise. `USER app` follows least privilege: if the app is broken into, the attacker is not root. Check with `docker run --rm --entrypoint whoami <image>`.
+- Order layers from rarely changed to often changed (dependencies first, code last), so a code change reuses the cached `pip install` layer.
+
 ## Startup checklist
-1. `docker start db`
-2. `cd ~/issue-tracker/backend`
-3. `source .venv/bin/activate`
-4. `uvicorn main:app --reload`
+1. `cd ~/issue-tracker`
+2. `docker compose up -d --build --wait`
+3. Open http://localhost:8000/docs
+4. When done: `docker compose stop` (never `down -v`)
+
+Local development without Docker (hot reload): start only the database with `docker compose up -d db`, then in `backend/` run `source .venv/bin/activate` and `DATABASE_URL=postgresql://tracker:<password>@localhost:5432/issues uvicorn main:app --reload`.
