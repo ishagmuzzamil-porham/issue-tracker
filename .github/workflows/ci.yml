@@ -56,3 +56,28 @@ jobs:
       - name: Show logs if something failed
         if: failure()
         run: docker compose logs
+
+
+  publish:
+    needs: integration
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/issue-tracker-api
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build the image
+        run: docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest backend
+
+      - name: Push the image
+        run: |
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
