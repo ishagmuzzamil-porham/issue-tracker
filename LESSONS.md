@@ -65,6 +65,15 @@
 - Containers run as root unless I say otherwise. `USER app` follows least privilege: if the app is broken into, the attacker is not root. Check with `docker run --rm --entrypoint whoami <image>`.
 - Order layers from rarely changed to often changed (dependencies first, code last), so a code change reuses the cached `pip install` layer.
 
+## 10. Publishing images (CD)
+- A registry stores images (Docker Hub, GHCR). `docker push` uploads, `docker pull` downloads.
+- Image name = registry/owner/name:tag. The commit-ID tag never moves; `latest` always moves to the newest.
+- The publish job has `needs: integration`, so only tested images are published, and only on push to main.
+- `GITHUB_TOKEN` is a temporary token per run. `permissions: packages: write` gives it only what it needs.
+- `--password-stdin` and the password prompt keep tokens out of logs and shell history.
+- "denied" means a permission problem, not a code problem. My fix: ...
+
+
 ## Startup checklist
 1. `cd ~/issue-tracker`
 2. `docker compose up -d --build --wait`
